@@ -1,50 +1,31 @@
-using System;
-using System.Collections.Generic;
-
-namespace W02CodeQueues
+public class TakingTurnsQueue
 {
-    public class TakingTurnsQueue
-    {
-        private Queue<Person> queue = new Queue<Person>();
+    private readonly PersonQueue queue = new();
 
-        public void AddPerson(Person person)
+    public void AddPerson(Person person)
+    {
+        queue.Enqueue(person);
+    }
+
+    public Person GetNextPerson()
+    {
+        if (queue.IsEmpty())
         {
-            queue.Enqueue(person);
+            throw new InvalidOperationException("Queue is empty.");
         }
 
-        public Person GetNextPerson()
+        var person = queue.Dequeue();
+        
+        // If turns are 0 or less (infinite) or there are still turns left
+        if (person.Turns <= 0 || person.Turns > 1)
         {
-            if (queue.Count == 0)
-            {
-                throw new InvalidOperationException("Queue is empty.");
-            }
-
-            var person = queue.Dequeue();
             if (person.Turns > 0)
             {
                 person.Turns--;
-                if (person.Turns > 0 || person.Turns == 0)
-                {
-                    queue.Enqueue(person);  // Person gets back in the queue if they have turns left.
-                }
             }
-            else
-            {
-                queue.Enqueue(person);  // Person with infinite turns stays in the queue.
-            }
-            return person;
+            queue.Enqueue(person);
         }
-    }
-
-    public class Person
-    {
-        public string Name { get; set; }
-        public int Turns { get; set; }
-
-        public Person(string name, int turns)
-        {
-            Name = name;
-            Turns = turns;
-        }
+        
+        return person;
     }
 }

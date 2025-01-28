@@ -1,43 +1,35 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace W02CodeQueues
+﻿public class PriorityQueue
 {
-    public class PriorityQueue
+    private readonly List<PriorityItem> items = new();
+
+    public void Enqueue(PriorityItem item)
     {
-        private List<QueueItem> queue = new List<QueueItem>();
-
-        public void Enqueue(QueueItem item)
-        {
-            queue.Add(item);
-        }
-
-        public QueueItem Dequeue()
-        {
-            if (queue.Count == 0)
-            {
-                throw new InvalidOperationException("Queue is empty.");
-            }
-
-            var highestPriorityItem = queue.OrderByDescending(item => item.Priority)
-                                           .ThenBy(item => queue.IndexOf(item))
-                                           .FirstOrDefault();
-
-            queue.Remove(highestPriorityItem);
-            return highestPriorityItem;
-        }
+        items.Add(item);
     }
 
-    public class QueueItem
+    public PriorityItem Dequeue()
     {
-        public string Data { get; set; }
-        public int Priority { get; set; }
-
-        public QueueItem(string data, int priority)
+        if (items.Count == 0)
         {
-            Data = data;
-            Priority = priority;
+            throw new InvalidOperationException("Queue is empty.");
         }
+
+        int maxPriority = items.Max(x => x.Priority);
+        var firstHighestPriorityItem = items.First(x => x.Priority == maxPriority);
+        
+        items.Remove(firstHighestPriorityItem);
+        return firstHighestPriorityItem;
+    }
+}
+
+public class PriorityItem
+{
+    public string Data { get; set; }
+    public int Priority { get; set; }
+
+    public PriorityItem(string data, int priority)
+    {
+        Data = data;
+        Priority = priority;
     }
 }
