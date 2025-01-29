@@ -1,23 +1,15 @@
-using Newtonsoft.Json;
-using System.Collections.Generic;
-
 public class FeatureCollection
 {
-    [JsonProperty("features")]
-    public List<Feature> Features { get; set; } = new List<Feature>();
+    public Feature[] Features { get; set; }
 }
 
 public class Feature
 {
-    [JsonProperty("properties")]
-    public Properties Properties { get; set; } = new Properties();
+    public Properties Properties { get; set; }
 }
 
 public class Properties
 {
-    [JsonProperty("place")]
-    public string Place { get; set; } = string.Empty;
-
-    [JsonProperty("mag")]
+    public string Place { get; set; }
     public double Mag { get; set; }
 }

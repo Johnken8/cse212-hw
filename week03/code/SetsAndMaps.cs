@@ -1,107 +1,94 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using Newtonsoft.Json;
+using System.Text.Json;
 
 public static class SetsAndMaps
 {
-    // Problem 1: FindPairs - O(n) solution using HashSet
     public static string[] FindPairs(string[] words)
     {
-        var result = new List<string>();
-        var seen = new HashSet<string>();
-
+        var pairs = new List<string>();
+        var wordSet = new HashSet<string>(words);
+        
         foreach (var word in words)
         {
-            // Skip words with same letters (e.g., "aa")
-            if (word[0] == word[1]) continue;
+            if (word[0] == word[1]) continue; // Skip same-letter words
             
-            string reversed = new string(word.Reverse().ToArray());
-            if (seen.Contains(reversed))
+            string reversed = new string(new[] { word[1], word[0] });
+            if (wordSet.Contains(reversed) && string.Compare(word, reversed) < 0)
             {
-                result.Add($"{reversed} & {word}");
-            }
-            else
-            {
-                seen.Add(word);
+                pairs.Add($"{word} & {reversed}");
             }
         }
-
-        return result.ToArray();
-    }
-
-    // Problem 2: SummarizeDegrees - Dictionary to count degrees
-    public static Dictionary<string, int> SummarizeDegrees(string filePath)
-    {
-        var degreeSummary = new Dictionary<string, int>();
         
-        try
-        {
-            // Skip header row and process each line
-            foreach (var line in File.ReadLines(filePath).Skip(1))
-            {
-                var columns = line.Split(',');
-                if (columns.Length >= 4)
-                {
-                    string degree = columns[3].Trim();
-                    degreeSummary[degree] = degreeSummary.GetValueOrDefault(degree, 0) + 1;
-                }
-            }
-        }
-        catch (Exception)
-        {
-            // Return empty dictionary if file can't be read
-            return new Dictionary<string, int>();
-        }
-
-        return degreeSummary;
+        return pairs.ToArray();
     }
 
-    // Problem 3: IsAnagram - Using Dictionary for character counting
+    public static Dictionary<string, int> SummarizeDegrees(string filename)
+    {
+        var degrees = new Dictionary<string, int>();
+        foreach (var line in File.ReadLines(filename))
+        {
+            var fields = line.Split(",");
+            string degree = fields[3].Trim();
+            
+            if (degrees.ContainsKey(degree))
+                degrees[degree]++;
+            else
+                degrees[degree] = 1;
+        }
+
+        return degrees;
+    }
+
     public static bool IsAnagram(string word1, string word2)
     {
+        if (string.IsNullOrEmpty(word1) || string.IsNullOrEmpty(word2))
+            return false;
+
         // Remove spaces and convert to lowercase
         word1 = word1.Replace(" ", "").ToLower();
         word2 = word2.Replace(" ", "").ToLower();
 
-        // If lengths are different, they can't be anagrams
-        if (word1.Length != word2.Length) return false;
+        if (word1.Length != word2.Length)
+            return false;
 
         var charCount = new Dictionary<char, int>();
 
         // Count characters in first word
         foreach (char c in word1)
         {
-            charCount[c] = charCount.GetValueOrDefault(c, 0) + 1;
+            if (charCount.ContainsKey(c))
+                charCount[c]++;
+            else
+                charCount[c] = 1;
         }
 
-        // Decrement counts for second word
+        // Subtract counts for second word
         foreach (char c in word2)
         {
-            if (!charCount.ContainsKey(c)) return false;
+            if (!charCount.ContainsKey(c))
+                return false;
+                
             charCount[c]--;
-            if (charCount[c] == 0) charCount.Remove(c);
+            if (charCount[c] == 0)
+                charCount.Remove(c);
         }
 
-        // If dictionary is empty, all characters matched
         return charCount.Count == 0;
     }
 
-    // Problem 5: Earthquake JSON Data
     public static string[] EarthquakeDailySummary()
     {
-        try
-        {
-            string jsonData = File.ReadAllText("../../../earthquakes.json");
-            var featureCollection = JsonConvert.DeserializeObject<FeatureCollection>(jsonData);
-            return featureCollection?.Features?
-                .Select(f => $"{f.Properties.Place} - Mag {f.Properties.Mag:F2}")
-                .ToArray() ?? Array.Empty<string>();
-        }
-        catch (Exception)
-        {
-            return Array.Empty<string>();
-        }
+        const string uri = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson";
+        using var client = new HttpClient();
+        using var getRequestMessage = new HttpRequestMessage(HttpMethod.Get, uri);
+        using var jsonStream = client.Send(getRequestMessage).Content.ReadAsStream();
+        using var reader = new StreamReader(jsonStream);
+        var json = reader.ReadToEnd();
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+        var featureCollection = JsonSerializer.Deserialize<FeatureCollection>(json, options);
+        
+        return featureCollection.Features
+            .Select(f => $"{f.Properties.Place} - Mag {f.Properties.Mag}")
+            .ToArray();
     }
 }
